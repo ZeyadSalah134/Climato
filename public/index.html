@@ -860,7 +860,7 @@
   <!-- ========================================================================= -->
   <script>
     // State
-    let currentPage = 'home';
+    let currentPage = 'explorer';
     let verifiedStations = [];
     let selectedPoint = { latitude: 30.0444, longitude: 31.2357, name: "Cairo Central / Giza, Egypt" };
     let comparePointA = { latitude: 30.0444, longitude: 31.2357, name: "Cairo Central / Giza, Egypt" };
@@ -900,7 +900,7 @@
       });
 
       if (page === 'explorer') {
-        setTimeout(initMapIfNeeded, 120);
+        setTimeout(initMapIfNeeded, 80);
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -979,42 +979,55 @@
       if (!mapMarkersLayer) return;
       mapMarkersLayer.clearLayers();
 
-      // Render 30 verified stations with organic leaf-green aesthetics
+      // Render 30 verified stations with high-visibility glowing radar pins
       verifiedStations.forEach(st => {
-        const isSelected = Math.abs(st.latitude - selectedPoint.latitude) < 0.1 && Math.abs(st.longitude - selectedPoint.longitude) < 0.1;
-        const color = isSelected ? '#92AC64' : '#414510';
-        const circle = L.circleMarker([st.latitude, st.longitude], {
-          radius: isSelected ? 10 : 7,
-          fillColor: color,
-          color: '#FFFFFF',
-          weight: isSelected ? 3 : 1.5,
-          fillOpacity: isSelected ? 0.95 : 0.75
+        const isSelected = Math.abs(st.latitude - selectedPoint.latitude) < 0.15 && Math.abs(st.longitude - selectedPoint.longitude) < 0.15;
+        
+        const pinHtml = `
+          <div style="position:relative; width:26px; height:26px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+            <div style="position:absolute; width:100%; height:100%; border-radius:50%; background:${isSelected ? 'rgba(245,158,11,0.5)' : 'rgba(16,185,129,0.45)'}; transform:scale(1.2); animation:pulse 2s infinite;"></div>
+            <div style="position:relative; width:${isSelected ? '20px' : '16px'}; height:${isSelected ? '20px' : '16px'}; border-radius:50%; background:${isSelected ? '#F59E0B' : '#10B981'}; border:2.5px solid #FFFFFF; box-shadow:0 0 14px ${isSelected ? 'rgba(245,158,11,1)' : 'rgba(16,185,129,0.9)'};"></div>
+          </div>
+        `;
+
+        const icon = L.divIcon({
+          html: pinHtml,
+          className: 'station-radar-pin',
+          iconSize: [26, 26],
+          iconAnchor: [13, 13]
         });
 
-        circle.bindTooltip(`
-          <div style="font-family:'Plus Jakarta Sans',sans-serif; padding:4px;">
-            <b style="color:#131B07;">${st.name}</b><br/>
-            <span style="color:#414510; font-size:11px;">🌱 Verified NASA Station</span><br/>
-            <span style="color:#66715D; font-size:10px; font-family:monospace;">${st.latitude.toFixed(3)}°N, ${st.longitude.toFixed(3)}°E</span>
+        const marker = L.marker([st.latitude, st.longitude], { icon: icon });
+
+        // Tooltip on hover
+        marker.bindTooltip(`
+          <div style="font-family:'Plus Jakarta Sans',sans-serif; padding:2px 4px;">
+            <b style="color:#131B07; font-size:12px;">📍 ${st.name}</b><br/>
+            <span style="color:#059669; font-size:11px; font-weight:700;">🌱 NASA POWER Station</span><br/>
+            <span style="color:#64748B; font-size:10px; font-family:monospace;">${st.latitude.toFixed(3)}°N, ${st.longitude.toFixed(3)}°E</span>
           </div>
         `);
 
-        circle.on('click', (e) => {
-          L.DomEvent.stopPropagation(e);
+        // Rich Popup on click
+        marker.bindPopup(`
+          <div style="font-family:'Plus Jakarta Sans',sans-serif; padding:6px; min-width:210px;">
+            <div style="font-size:13px; font-weight:800; color:#131B07; margin-bottom:2px;">📍 ${st.name}</div>
+            <div style="font-size:11px; font-weight:700; color:#059669; margin-bottom:4px;">🌱 Verified NASA Grid Station</div>
+            <div style="font-size:10px; font-family:monospace; color:#64748B; margin-bottom:10px;">${st.latitude.toFixed(3)}°N, ${st.longitude.toFixed(3)}°E • 312 Monthly Obs</div>
+            <button onclick="runQuickPreset('${st.name.replace(/'/g, "\\'")}', ${st.latitude}, ${st.longitude}, 'T2M')" style="width:100%; padding:8px 14px; background:#131B07; color:#FFFFFF; border:none; border-radius:12px; font-weight:800; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 3px 8px rgba(0,0,0,0.2);">
+              <span>⚡ Analyze Station Trend</span>
+            </button>
+          </div>
+        `);
+
+        marker.on('click', () => {
           selectedPoint = { latitude: st.latitude, longitude: st.longitude, name: st.name };
           updateTargetLocationDisplay();
           renderMapMarkers();
         });
-        circle.addTo(mapMarkersLayer);
-      });
 
-      // Target Pin
-      const targetPin = L.divIcon({
-        html: '<div style="background-color:#92AC64; width:18px; height:18px; border-radius:50%; border:3px solid #FFFFFF; box-shadow:0 0 14px rgba(146, 172, 100, 0.9);"></div>',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9]
+        marker.addTo(mapMarkersLayer);
       });
-      L.marker([selectedPoint.latitude, selectedPoint.longitude], { icon: targetPin }).addTo(mapMarkersLayer);
     }
 
     function updateTargetLocationDisplay() {
@@ -1417,6 +1430,9 @@
 
           // Render Map Markers immediately
           renderMapMarkers();
+          if (leafMap) {
+            setTimeout(() => leafMap.invalidateSize(), 80);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -1426,6 +1442,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       initApp();
       updateTargetLocationDisplay();
+      setTimeout(initMapIfNeeded, 80);
     });
   </script>
 </body>
