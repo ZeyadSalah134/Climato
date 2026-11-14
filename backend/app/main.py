@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
+
+# Ensure backend directory is in sys.path so 'app.*' imports work when imported as backend.app.main (Vercel)
+_BACKEND_DIR = Path(__file__).resolve().parents[1]
+if str(_BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_DIR))
 
 from fastapi import FastAPI, Request, Response
 from fastapi.encoders import jsonable_encoder
