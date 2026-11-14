@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
+    { "source": "/api", "destination": "/api/index.py" },
+    { "source": "/docs", "destination": "/api/index.py" },
+    { "source": "/openapi.json", "destination": "/api/index.py" },
+    { "source": "/climate_power_monthly_2000-2025.csv", "destination": "/api/index.py" },
+    { "source": "/climate_power_monthly_2000-2025.xlsx", "destination": "/api/index.py" },
+    { "source": "/dashboard", "destination": "/index.html" },
+    { "source": "/map", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

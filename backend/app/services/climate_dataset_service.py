@@ -31,6 +31,12 @@ DATASET_PATHS = [
     Path(settings.cache_dir).parent / "climate_power_monthly_2000-2025.csv",
     Path(__file__).resolve().parents[3] / "climate_power_monthly_2000-2025.csv",
     Path(__file__).resolve().parents[3] / "data" / "climate_power_monthly_2000-2025.csv",
+    Path(__file__).resolve().parents[2] / "data" / "climate_power_monthly_2000-2025.csv",
+    Path(__file__).resolve().parents[1] / "data" / "climate_power_monthly_2000-2025.csv",
+    Path.cwd() / "climate_power_monthly_2000-2025.csv",
+    Path.cwd() / "data" / "climate_power_monthly_2000-2025.csv",
+    Path("/var/task/climate_power_monthly_2000-2025.csv"),
+    Path("/var/task/data/climate_power_monthly_2000-2025.csv"),
 ]
 
 # Regional station labels for the 30 grid points in Egypt

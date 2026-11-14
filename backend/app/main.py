@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
 from fastapi.encoders import jsonable_encoder
@@ -42,20 +43,19 @@ async def lifespan(app: FastAPI):
 
 
 DESCRIPTION = """
-**EarthTrend** turns NASA Earth observation and Earth system model data into
-scientifically meaningful, interactive environmental trend analysis.
+## 🌍 🚀 **[CLICK HERE TO OPEN THE INTERACTIVE MAP DASHBOARD](/)**
 
-* Discover supported environmental variables and their provenance.
-* Retrieve real NASA POWER time series for any coordinate on Earth.
-* Run ordinary least squares, Mann-Kendall, and Theil-Sen trend analyses.
-* Assess data quality and statistical significance.
-* Compare two regions descriptively.
-* Export observations (CSV), results (JSON), and a full report (PDF).
+### **EarthTrend — Earth Intelligence & Environmental Analytics**
+Turns NASA Earth observation and Earth system model data into scientifically meaningful, interactive environmental trend analysis.
 
-EarthTrend is an independent educational project submitted to the NASA Space
-Apps Challenge. It is **not** affiliated with or endorsed by NASA. All data is
-attributed to its original provider, and no measurements, p-values, or findings
-are ever fabricated.
+* 🗺️ **[Launch Web Dashboard & Interactive Map](/)**
+* 📊 Discover supported environmental variables and verified NASA datasets.
+* 📈 Run Ordinary Least Squares, Mann-Kendall, and Theil-Sen statistical trend tests.
+* 🔬 Assess data quality and 95% confidence intervals on 28,080 observations (2000–2025).
+* ⚖️ Compare two regions descriptively.
+* 📄 Export observations (CSV), results (JSON), and official PDF reports.
+
+*NASA Space Apps Challenge 2026 Submission.*
 """
 
 
@@ -116,11 +116,18 @@ def create_app() -> FastAPI:
 
     # --- routes -----------------------------------------------------------
     for module in (health, variables, datasets, locations, data, analysis, export):
-        app.include_router(module.router, prefix=settings.api_prefix)
+        app.include_router(module.router, prefix="/api/v1")
+        app.include_router(module.router, prefix="/api")
 
-    dist_index = settings.cache_dir.parent.parent / "frontend" / "dist" / "index.html"
-    if not dist_index.exists():
-        dist_index = REPO_ROOT / "frontend" / "dist" / "index.html"
+    search_indexes = [
+        REPO_ROOT / "public" / "index.html",
+        REPO_ROOT / "frontend" / "dist" / "index.html",
+        Path(__file__).resolve().parents[2] / "public" / "index.html",
+        Path(__file__).resolve().parents[2] / "frontend" / "dist" / "index.html",
+        Path("/var/task/public/index.html"),
+        Path("/var/task/frontend/dist/index.html"),
+    ]
+    dist_index = next((p for p in search_indexes if p.exists()), REPO_ROOT / "frontend" / "dist" / "index.html")
 
     @app.get("/", tags=["meta"], summary="Service root or web dashboard")
     async def root(request: Request) -> Response:
@@ -133,8 +140,16 @@ def create_app() -> FastAPI:
             "engine_version": settings.analysis_engine_version,
             "tagline": "Discover Earth's Changes. Understand Their Significance.",
             "docs": "/docs",
+            "dashboard": "/dashboard",
             "api_prefix": settings.api_prefix,
         })
+
+    @app.get("/dashboard", tags=["meta"], summary="Direct web dashboard")
+    @app.get("/map", tags=["meta"], summary="Direct interactive map view")
+    async def web_dashboard():
+        if dist_index.exists():
+            return FileResponse(dist_index)
+        return JSONResponse(status_code=404, content={"message": "Web dashboard not built"})
 
     @app.get("/climate_power_monthly_2000-2025.csv", tags=["datasets"])
     async def download_csv():

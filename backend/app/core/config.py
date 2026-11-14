@@ -6,6 +6,7 @@ in Docker Compose, or on a managed Python host without code changes.
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -15,6 +16,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # backend/app/core/config.py -> backend/
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = BACKEND_ROOT.parent
+
+IS_VERCEL = bool(os.environ.get("VERCEL"))
+DEFAULT_DB_PATH = "/tmp/earthtrend.db" if IS_VERCEL else (REPO_ROOT / "data" / "earthtrend.db").as_posix()
+DEFAULT_CACHE_DIR = Path("/tmp/data/cache") if IS_VERCEL else REPO_ROOT / "data" / "cache"
+DEFAULT_DEMO_DIR = Path("/tmp/data/samples") if IS_VERCEL else REPO_ROOT / "data" / "samples"
 
 
 class Settings(BaseSettings):
@@ -31,7 +37,7 @@ class Settings(BaseSettings):
     app_name: str = "EarthTrend API"
     app_version: str = "1.0.0"
     analysis_engine_version: str = "1.0.0"
-    environment: str = Field(default="development")
+    environment: str = Field(default="production" if IS_VERCEL else "development")
     debug: bool = Field(default=False)
 
     # --- HTTP server -------------------------------------------------------
@@ -41,7 +47,7 @@ class Settings(BaseSettings):
 
     # --- CORS --------------------------------------------------------------
     # Comma separated list. "*" allows any origin (development default).
-    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    cors_origins: str = "*"
 
     # --- NASA POWER --------------------------------------------------------
     power_base_url: str = "https://power.larc.nasa.gov/api/temporal"
@@ -51,7 +57,7 @@ class Settings(BaseSettings):
     power_retry_backoff_seconds: float = 1.5
 
     # --- Caching -----------------------------------------------------------
-    cache_dir: Path = Field(default=REPO_ROOT / "data" / "cache")
+    cache_dir: Path = Field(default_factory=lambda: DEFAULT_CACHE_DIR)
     cache_enabled: bool = True
     cache_ttl_seconds: int = 60 * 60 * 24 * 7  # one week
 
@@ -59,10 +65,10 @@ class Settings(BaseSettings):
     # When true the API will fall back to bundled, provenance-documented data
     # snapshots if NASA POWER cannot be reached. Responses are always marked.
     allow_demo_fallback: bool = True
-    demo_data_dir: Path = Field(default=REPO_ROOT / "data" / "samples")
+    demo_data_dir: Path = Field(default_factory=lambda: DEFAULT_DEMO_DIR)
 
     # --- Persistence -------------------------------------------------------
-    database_url: str = Field(default=f"sqlite:///{(REPO_ROOT / 'data' / 'earthtrend.db').as_posix()}")
+    database_url: str = Field(default=f"sqlite:///{DEFAULT_DB_PATH}")
 
     # --- Rate limiting -----------------------------------------------------
     rate_limit_requests: int = 120
@@ -86,9 +92,17 @@ class Settings(BaseSettings):
 
     def ensure_directories(self) -> None:
         """Create runtime directories that must exist before use."""
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.demo_data_dir.mkdir(parents=True, exist_ok=True)
-        (REPO_ROOT / "data").mkdir(parents=True, exist_ok=True)
+        try:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            self.demo_data_dir.mkdir(parents=True, exist_ok=True)
+            (REPO_ROOT / "data").mkdir(parents=True, exist_ok=True)
+        except OSError:
+            tmp_cache = Path("/tmp/data/cache")
+            tmp_cache.mkdir(parents=True, exist_ok=True)
+            self.cache_dir = tmp_cache
+            tmp_demo = Path("/tmp/data/samples")
+            tmp_demo.mkdir(parents=True, exist_ok=True)
+            self.demo_data_dir = tmp_demo
 
 
 @lru_cache
