@@ -169,17 +169,22 @@ class ClimateDatasetService:
             logger.error("Failed loading verified climate dataset: %s", exc)
             self._loaded = True
 
-    def find_nearest_station(self, latitude: float, longitude: float, max_dist_deg: float = 0.5) -> GridStation | None:
+    def find_nearest_station(
+        self, latitude: float, longitude: float, max_dist_deg: float = 4.0, fallback: bool = False
+    ) -> GridStation | None:
         stations = load_verified_stations()
+        if not stations:
+            return None
         best_station: GridStation | None = None
         best_dist = float("inf")
         for s in stations:
-            # Manhattan / max-coord distance for regular grid
             dist = max(abs(s.latitude - latitude), abs(s.longitude - longitude))
-            if dist <= max_dist_deg and dist < best_dist:
+            if dist < best_dist:
                 best_dist = dist
                 best_station = s
-        return best_station
+        if best_dist <= max_dist_deg or fallback:
+            return best_station
+        return None
 
     def get_series(
         self,
@@ -189,11 +194,13 @@ class ClimateDatasetService:
         longitude: float,
         start_date: date,
         end_date: date,
+        max_dist_deg: float = 4.0,
+        fallback: bool = False,
     ) -> ProviderSeries | None:
         if variable not in VARIABLE_INFO:
             return None
 
-        station = self.find_nearest_station(latitude, longitude, max_dist_deg=0.5)
+        station = self.find_nearest_station(latitude, longitude, max_dist_deg=max_dist_deg, fallback=fallback)
         if not station:
             return None
 

@@ -1092,7 +1092,9 @@
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error?.message || err.detail || 'Analysis request failed.');
+          const detailMsg = err.error?.details?.errors ? err.error.details.errors.map(e => e.msg || JSON.stringify(e)).join(', ') : '';
+          const msg = detailMsg || err.error?.message || err.detail || `Server returned error (${res.status})`;
+          throw new Error(msg);
         }
 
         const data = await res.json();
@@ -1100,7 +1102,9 @@
         renderTrendAnalysis(data);
         navigateTo('trend');
       } catch (err) {
-        showError(err.message);
+        showError(err.message === 'Failed to fetch' 
+          ? 'Cannot connect to backend server. Make sure the local server is running on http://localhost:8000' 
+          : err.message);
       } finally {
         if (btn) {
           btn.textContent = 'Execute Statistical Trend Analysis →';
