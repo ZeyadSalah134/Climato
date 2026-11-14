@@ -28,6 +28,8 @@ logger = get_logger(__name__)
 
 # Search paths for the verified dataset
 DATASET_PATHS = [
+    Path(__file__).resolve().parent.parent / "static" / "climate_power_monthly_2000-2025.csv",
+    Path("/var/task/backend/app/static/climate_power_monthly_2000-2025.csv"),
     Path(settings.cache_dir).parent / "climate_power_monthly_2000-2025.csv",
     Path(__file__).resolve().parents[3] / "climate_power_monthly_2000-2025.csv",
     Path(__file__).resolve().parents[3] / "data" / "climate_power_monthly_2000-2025.csv",

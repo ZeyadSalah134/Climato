@@ -126,14 +126,14 @@ def create_app() -> FastAPI:
         app.include_router(module.router, prefix="/api")
 
     search_indexes = [
+        Path(__file__).resolve().parent / "static" / "index.html",
+        Path("/var/task/backend/app/static/index.html"),
         REPO_ROOT / "public" / "index.html",
         REPO_ROOT / "frontend" / "dist" / "index.html",
-        Path(__file__).resolve().parents[2] / "public" / "index.html",
-        Path(__file__).resolve().parents[2] / "frontend" / "dist" / "index.html",
         Path("/var/task/public/index.html"),
         Path("/var/task/frontend/dist/index.html"),
     ]
-    dist_index = next((p for p in search_indexes if p.exists()), REPO_ROOT / "frontend" / "dist" / "index.html")
+    dist_index = next((p for p in search_indexes if p.exists()), Path(__file__).resolve().parent / "static" / "index.html")
 
     @app.get("/", tags=["meta"], summary="Service root or web dashboard")
     async def root(request: Request) -> Response:
@@ -159,19 +159,26 @@ def create_app() -> FastAPI:
 
     @app.get("/climate_power_monthly_2000-2025.csv", tags=["datasets"])
     async def download_csv():
-        p = REPO_ROOT / "climate_power_monthly_2000-2025.csv"
-        if not p.exists():
-            p = REPO_ROOT / "data" / "climate_power_monthly_2000-2025.csv"
-        if p.exists():
+        csv_paths = [
+            Path(__file__).resolve().parent / "static" / "climate_power_monthly_2000-2025.csv",
+            Path("/var/task/backend/app/static/climate_power_monthly_2000-2025.csv"),
+            REPO_ROOT / "climate_power_monthly_2000-2025.csv",
+            REPO_ROOT / "data" / "climate_power_monthly_2000-2025.csv",
+        ]
+        p = next((x for x in csv_paths if x.exists()), None)
+        if p:
             return FileResponse(p, filename="climate_power_monthly_2000-2025.csv", media_type="text/csv")
         return JSONResponse(status_code=404, content={"message": "File not found"})
 
     @app.get("/climate_power_monthly_2000-2025.xlsx", tags=["datasets"])
     async def download_xlsx():
-        p = REPO_ROOT / "climate_power_monthly_2000-2025.xlsx"
-        if not p.exists():
-            p = REPO_ROOT / "data" / "climate_power_monthly_2000-2025.xlsx"
-        if p.exists():
+        xlsx_paths = [
+            Path(__file__).resolve().parent / "static" / "climate_power_monthly_2000-2025.xlsx",
+            REPO_ROOT / "climate_power_monthly_2000-2025.xlsx",
+            REPO_ROOT / "data" / "climate_power_monthly_2000-2025.xlsx",
+        ]
+        p = next((x for x in xlsx_paths if x.exists()), None)
+        if p:
             return FileResponse(p, filename="climate_power_monthly_2000-2025.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         return JSONResponse(status_code=404, content={"message": "File not found"})
 
