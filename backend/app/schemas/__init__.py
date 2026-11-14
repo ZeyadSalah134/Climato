@@ -1,0 +1,78 @@
+"""Pydantic schemas describing the EarthTrend API contract."""
+
+from app.schemas.analysis import (
+    AnalysisHistoryItem,
+    ComparisonSummary,
+    CompareRequest,
+    CompareResponse,
+    DataQuality,
+    DistributionBin,
+    Interpretation,
+    LinearTrendResult,
+    MannKendallResult,
+    MonthlyClimatology,
+    QualityCheck,
+    SeasonalResult,
+    TheilSenResult,
+    TrendAnalysisResponse,
+    TrendLinePoint,
+    TrendRequest,
+)
+from app.schemas.common import (
+    DataProvenance,
+    GeoBounds,
+    GeoPoint,
+    HealthResponse,
+    Paginated,
+    Warning,
+)
+from app.schemas.location import LocationResult, LocationSearchResponse
+from app.schemas.timeseries import (
+    MissingObservation,
+    Observation,
+    TimeSeriesRequest,
+    TimeSeriesResponse,
+)
+from app.schemas.variables import (
+    DiscoveryRecommendation,
+    DiscoveryRequest,
+    DiscoveryResponse,
+    VariableInfo,
+    VariableListResponse,
+)
+
+__all__ = [
+    "AnalysisHistoryItem",
+    "CompareRequest",
+    "CompareResponse",
+    "ComparisonSummary",
+    "DataProvenance",
+    "DataQuality",
+    "DiscoveryRecommendation",
+    "DiscoveryRequest",
+    "DiscoveryResponse",
+    "DistributionBin",
+    "GeoBounds",
+    "GeoPoint",
+    "HealthResponse",
+    "Interpretation",
+    "LinearTrendResult",
+    "LocationResult",
+    "LocationSearchResponse",
+    "MannKendallResult",
+    "MissingObservation",
+    "MonthlyClimatology",
+    "Observation",
+    "Paginated",
+    "QualityCheck",
+    "SeasonalResult",
+    "TheilSenResult",
+    "TimeSeriesRequest",
+    "TimeSeriesResponse",
+    "TrendAnalysisResponse",
+    "TrendLinePoint",
+    "TrendRequest",
+    "VariableInfo",
+    "VariableListResponse",
+    "Warning",
+]

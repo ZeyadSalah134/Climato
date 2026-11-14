@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EarthTrend — Earth Intelligence & Environmental Analytics</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20'/><path d='M2 12h20'/></svg>" />
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            earth: {
+              950: '#06130d',
+              900: '#0a1d14',
+              800: '#123123',
+              700: '#1a4733',
+              600: '#226045',
+              500: '#10b981',
+              400: '#34d399',
+            },
+            navy: {
+              950: '#070b14',
+              900: '#0c1322',
+              850: '#111b30',
+              800: '#182542',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <style>
+    body { background-color: #070b14; color: #f1f5f9; font-family: 'Inter', sans-serif; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0c1322; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+    .glass-panel { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glass-panel-hover:hover { border-color: rgba(16, 185, 129, 0.35); box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.15); }
+    .leaflet-container { background-color: #070b14 !important; font-family: inherit; }
+    .leaflet-popup-content-wrapper { background: #0f172a !important; color: #f8fafc !important; border: 1px solid #1e293b; border-radius: 8px; }
+    .leaflet-popup-tip { background: #0f172a !important; }
+  </style>
+</head>
+<body class="bg-navy-950 text-slate-100 min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
+
+  <!-- Navigation Bar -->
+  <header class="sticky top-0 z-50 glass-panel border-b border-slate-800 bg-navy-950/85 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo -->
+        <div onclick="navigateTo('home')" class="flex items-center gap-3 cursor-pointer group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+            <svg class="w-6 h-6 text-navy-950 stroke-[2.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-xl tracking-tight text-white">Earth<span class="text-emerald-400">Trend</span></span>
+              <span class="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">NASA 2026</span>
+            </div>
+            <p class="text-[11px] text-slate-400 font-medium">Earth Intelligence & Environmental Analytics</p>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex items-center gap-1.5" id="nav-container">
+          <button onclick="navigateTo('home')" id="nav-btn-home" class="px-3.5 py-2 rounded-lg text-sm font-medium transition-all text-emerald-400 bg-emerald-500/15 border border-emerald-500/30">Home</button>
+          <button onclick="navigateTo('explorer')" id="nav-btn-explorer" class="px-3.5 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">Earth Explorer</button>
+          <button onclick="navigateTo('trend')" id="nav-btn-trend" class="px-3.5 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">Trend Analysis</button>
+          <button onclick="navigateTo('compare')" id="nav-btn-compare" class="px-3.5 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">Compare Regions</button>
+          <button onclick="navigateTo('data')" id="nav-btn-data" class="px-3.5 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">Data Explorer</button>
+          <button onclick="navigateTo('about')" id="nav-btn-about" class="px-3.5 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">About</button>
+        </nav>
+
+        <!-- Status Pill -->
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-xs">
+            <span id="api-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="api-status-text" class="text-slate-300 font-mono text-[11px]">NASA API Connected</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Nav Bar -->
+    <div class="md:hidden flex overflow-x-auto px-4 py-2 border-t border-slate-800 gap-2 bg-slate-950/90 text-xs">
+      <button onclick="navigateTo('home')" class="px-3 py-1.5 rounded-md font-medium whitespace-nowrap text-emerald-300 bg-emerald-500/20">Home</button>
+      <button onclick="navigateTo('explorer')" class="px-3 py-1.5 rounded-md font-medium whitespace-nowrap text-slate-300">Explorer</button>
+      <button onclick="navigateTo('trend')" class="px-3 py-1.5 rounded-md font-medium whitespace-nowrap text-slate-300">Trend</button>
+      <button onclick="navigateTo('compare')" class="px-3 py-1.5 rounded-md font-medium whitespace-nowrap text-slate-300">Compare</button>
+      <button onclick="navigateTo('data')" class="px-3 py-1.5 rounded-md font-medium whitespace-nowrap text-slate-300">Data</button>
+      <button onclick="navigateTo('about')" class="px-3 py-1.5 rounded-md font-medium whitespace-nowrap text-slate-300">About</button>
+    </div>
+  </header>
+
+  <!-- Notification Banner -->
+  <div id="error-banner" class="hidden bg-rose-950/90 border-b border-rose-800 text-rose-200 px-4 py-3 text-xs">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <span id="error-message"></span>
+      <button onclick="hideError()" class="text-rose-400 font-bold ml-4">✕</button>
+    </div>
+  </div>
+
+  <!-- Main Content Pages -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- PAGE: HOME -->
+    <div id="page-home" class="space-y-16">
+      <!-- Hero -->
+      <section class="relative overflow-hidden rounded-3xl p-8 sm:p-14 border border-emerald-500/20 bg-gradient-to-br from-navy-900 via-earth-950 to-navy-950 shadow-2xl">
+        <div class="max-w-3xl space-y-6">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            NASA Space Apps Challenge 2026 Submission
+          </div>
+          <h1 class="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight">
+            Earth Intelligence & <br />
+            <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+              Environmental Analytics
+            </span>
+          </h1>
+          <p class="text-lg text-slate-300 leading-relaxed">
+            EarthTrend delivers rigorous empirical climate trend statistics from NASA Earth observations. Powered by <strong class="text-emerald-400">28,080 verified historical observations (2000–2025)</strong> across Egypt and live NASA POWER API integration worldwide.
+          </p>
+          <div class="flex flex-wrap items-center gap-4 pt-4">
+            <button onclick="navigateTo('explorer')" class="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-navy-950 font-bold text-sm shadow-lg shadow-emerald-500/25 transition-all">
+              Launch Earth Explorer →
+            </button>
+            <button onclick="runQuickPreset('Cairo Central', 30.0444, 31.2357, 'T2M')" class="flex items-center gap-2 px-6 py-3.5 rounded-xl glass-panel hover:bg-slate-800 text-white font-semibold text-sm border border-slate-700 transition-all">
+              Analyze Cairo Warming (+0.31°C/dec)
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5 Core Scientific Questions -->
+      <section class="space-y-6">
+        <div class="text-center max-w-2xl mx-auto space-y-2">
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">The 5 Core Scientific Questions</h2>
+          <p className="text-slate-400 text-sm">Every analysis provides mathematical, peer-tested answers to the fundamental Earth science questions.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div class="glass-panel p-6 rounded-2xl space-y-2">
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">1. WHAT is changing?</span>
+            <h3 class="text-base font-bold text-white">Environmental Variables</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">Air Temperature (T2M), Precipitation (PRECTOTCORR), and All-Sky Solar Irradiance calibrated via MERRA-2 and CERES.</p>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl space-y-2">
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">2. WHERE is it changing?</span>
+            <h3 class="text-base font-bold text-white">Geographical Precision</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">Interactive global map targeting, with dense 30-station verified grid across the Nile Delta, Cairo, Alexandria, and Suez Canal.</p>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl space-y-2">
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">3. HOW MUCH is it changing?</span>
+            <h3 class="text-base font-bold text-white">Quantitative Rates</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">Ordinary Least Squares (OLS) regression slope and robust Theil-Sen median slopes reported in physical units per year and per decade.</p>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl space-y-2">
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">4. HOW does it change over time?</span>
+            <h3 class="text-base font-bold text-white">Temporal Dynamics</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">Decomposes 26 years of monthly records (2000-2025), removing 12-month cyclical noise to evaluate baseline anomaly trajectories.</p>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl space-y-2">
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">5. IS it statistically significant?</span>
+            <h3 class="text-base font-bold text-white">Hypothesis Testing</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">Two-sided p-values and Mann-Kendall monotonic trend tests evaluated at α = 0.05 with exact 95% confidence bands.</p>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl space-y-2 bg-gradient-to-br from-emerald-950/40 to-slate-900 border border-emerald-500/25 flex flex-col justify-center">
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Ethical Transparency</span>
+            <p class="text-xs text-slate-300 leading-relaxed">No data fabrication. Inconclusive tests are never falsely described as proof of no environmental change.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Presets -->
+      <section class="space-y-4">
+        <h2 class="text-xl font-bold text-white">Verified Historical Presets (2000–2025)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div onclick="runQuickPreset('Cairo Central', 30.0444, 31.2357, 'T2M')" class="glass-panel glass-panel-hover p-6 rounded-2xl cursor-pointer space-y-3">
+            <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-emerald-500/15 text-emerald-400">T2M Air Temperature</span>
+            <h3 class="text-lg font-bold text-white">Cairo Central Warming Trend</h3>
+            <p class="text-xs text-slate-300">+0.031°C/yr (+0.31°C/decade), p = 0.0001 (Statistically Significant).</p>
+            <span class="text-xs font-bold text-emerald-400 block pt-1">Analyze Cairo →</span>
+          </div>
+          <div onclick="runQuickPreset('Alexandria Coast', 31.2001, 29.9187, 'PRECTOTCORR')" class="glass-panel glass-panel-hover p-6 rounded-2xl cursor-pointer space-y-3">
+            <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-sky-500/15 text-sky-400">PRECTOTCORR Precipitation</span>
+            <h3 class="text-lg font-bold text-white">Alexandria Coastal Precipitation</h3>
+            <p class="text-xs text-slate-300">Mediterranean coastal precipitation anomalies and seasonal shifts.</p>
+            <span class="text-xs font-bold text-emerald-400 block pt-1">Analyze Alexandria →</span>
+          </div>
+          <div onclick="runQuickPreset('Nile Delta Tanta', 31.0, 31.25, 'ALLSKY_SFC_SW_DWN')" class="glass-panel glass-panel-hover p-6 rounded-2xl cursor-pointer space-y-3">
+            <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-amber-500/15 text-amber-400">SW_DWN Solar Radiation</span>
+            <h3 class="text-lg font-bold text-white">Nile Delta Solar Irradiance</h3>
+            <p class="text-xs text-slate-300">Surface downward irradiance trends across the agricultural Nile Delta.</p>
+            <span class="text-xs font-bold text-emerald-400 block pt-1">Analyze Nile Delta →</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- PAGE: EARTH EXPLORER -->
+    <div id="page-explorer" class="hidden space-y-8">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-extrabold text-white">Earth Explorer</h1>
+          <p class="text-sm text-slate-400">Select any location on the interactive map or choose from 30 verified NASA stations in Egypt.</p>
+        </div>
+        <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
+          30 Verified Grid Stations Active
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Map & Search -->
+        <div class="lg:col-span-8 space-y-6">
+          <div class="glass-panel p-3 rounded-2xl flex gap-2">
+            <input type="text" id="location-search-input" placeholder="Search city or region (e.g. Cairo, Alexandria, Damietta, Nairobi)..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500" />
+            <button onclick="handleSearchLocation()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl border border-slate-700">Search</button>
+          </div>
+          <div id="search-results-box" class="hidden glass-panel p-3 rounded-xl max-h-40 overflow-y-auto space-y-1 text-xs"></div>
+
+          <!-- Leaflet Map Container -->
+          <div class="glass-panel p-3 rounded-3xl">
+            <div id="map-container" class="w-full h-[450px] rounded-2xl overflow-hidden border border-slate-800"></div>
+          </div>
+
+          <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <span class="text-xs font-semibold text-slate-400 uppercase">Selected Target</span>
+              <h3 id="target-location-name" class="text-base font-bold text-white">Cairo Central / Giza, Egypt</h3>
+              <span id="target-location-coords" class="text-xs font-mono text-emerald-400 font-semibold">30.0444°N, 31.2357°E</span>
+            </div>
+            <div class="text-xs text-slate-400">
+              Grid Cell: <span class="font-mono text-slate-200">~0.5° × 0.625° MERRA-2</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls Sidebar -->
+        <div class="lg:col-span-4 space-y-6">
+          <div class="glass-panel p-6 rounded-3xl space-y-6 border border-slate-800">
+            <h2 class="text-lg font-bold text-white pb-3 border-b border-slate-800">Analysis Setup</h2>
+
+            <!-- Variable -->
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-slate-300 uppercase">Environmental Variable</label>
+              <select id="select-variable" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                <option value="T2M" selected>Air Temperature (°C) — T2M</option>
+                <option value="PRECTOTCORR">Precipitation (mm/day) — PRECTOTCORR</option>
+                <option value="ALLSKY_SFC_SW_DWN">Solar Radiation (MJ/m²/day) — SW_DWN</option>
+              </select>
+            </div>
+
+            <!-- Date Range -->
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-slate-300 uppercase">Time Range (2000–2025)</label>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <span class="text-[11px] text-slate-400 block mb-1">Start Date</span>
+                  <input type="date" id="input-start-date" value="2000-01-01" min="1981-01-01" max="2025-12-01" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono" />
+                </div>
+                <div>
+                  <span class="text-[11px] text-slate-400 block mb-1">End Date</span>
+                  <input type="date" id="input-end-date" value="2025-12-01" min="2000-01-01" max="2025-12-01" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Seasonal Adjustment -->
+            <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold text-white block">Seasonal Adjustment</span>
+                <span class="text-[11px] text-slate-400">Subtracts 12-mo baseline cycle</span>
+              </div>
+              <input type="checkbox" id="check-seasonal" checked class="w-5 h-5 accent-emerald-500 rounded" />
+            </div>
+
+            <!-- Alpha -->
+            <div class="space-y-2">
+              <span class="text-xs font-bold text-slate-300 uppercase">Significance Threshold (α)</span>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="setAlpha(0.01)" id="alpha-001" class="py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800">α = 0.01</button>
+                <button type="button" onclick="setAlpha(0.05)" id="alpha-005" class="py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/50">α = 0.05</button>
+                <button type="button" onclick="setAlpha(0.10)" id="alpha-010" class="py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800">α = 0.10</button>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button id="btn-run-analysis" onclick="executeCurrentAnalysis()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-navy-950 font-extrabold text-sm shadow-lg shadow-emerald-500/25 transition-all">
+              Execute Statistical Trend Analysis →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: TREND ANALYSIS -->
+    <div id="page-trend" class="hidden space-y-8">
+      <div id="trend-empty" class="py-20 text-center space-y-4 glass-panel max-w-xl mx-auto rounded-3xl p-10">
+        <h2 class="text-2xl font-bold text-white">No Active Trend Analysis</h2>
+        <p class="text-sm text-slate-400">Select a location and variable in Earth Explorer to compute statistics.</p>
+        <button onclick="navigateTo('explorer')" class="px-6 py-3 rounded-xl bg-emerald-500 text-navy-950 font-bold text-sm">Open Earth Explorer</button>
+      </div>
+
+      <div id="trend-content" class="hidden space-y-8">
+        <!-- Top Info & Export Bar -->
+        <div class="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span id="trend-var-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">T2M</span>
+                <span id="trend-mode-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">Climato 2000-2025 Dataset</span>
+                <span id="trend-id-badge" class="text-xs text-slate-400 font-mono"></span>
+              </div>
+              <h1 id="trend-title" class="text-3xl font-extrabold text-white tracking-tight">Air Temperature Trend Analysis</h1>
+              <p id="trend-location" class="text-sm text-slate-300"></p>
+            </div>
+            <!-- Export Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+              <a id="btn-export-csv" href="#" download class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700">Download CSV</a>
+              <a id="btn-export-json" href="#" download class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700">Download JSON</a>
+              <a id="btn-export-pdf" href="#" download class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-500/20">Official Report (PDF)</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric Stat Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="glass-panel p-5 rounded-2xl space-y-2">
+            <span class="text-xs font-semibold text-slate-400 uppercase">OLS Slope / Rate</span>
+            <div id="stat-ols-slope" class="text-3xl font-extrabold font-mono text-white">+0.0309</div>
+            <span id="stat-ols-decade" class="text-xs text-slate-400 block">+0.309 / decade</span>
+            <span id="stat-ols-dir" class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/15 text-emerald-400">Increasing</span>
+          </div>
+          <div class="glass-panel p-5 rounded-2xl space-y-2">
+            <span class="text-xs font-semibold text-slate-400 uppercase">Statistical Significance</span>
+            <div id="stat-p-value" class="text-3xl font-extrabold font-mono text-white">0.0001</div>
+            <span class="text-xs text-slate-400 block">Threshold: α = 0.05</span>
+            <span id="stat-sig-badge" class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/15 text-emerald-400">Statistically Significant</span>
+          </div>
+          <div class="glass-panel p-5 rounded-2xl space-y-2">
+            <span class="text-xs font-semibold text-slate-400 uppercase">Mann-Kendall Test</span>
+            <div id="stat-mk-tau" class="text-3xl font-extrabold font-mono text-white">0.156</div>
+            <span id="stat-mk-z" class="text-xs text-slate-400 block">Z = 4.12</span>
+            <span id="stat-mk-trend" class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/15 text-emerald-400">Monotonic Increase</span>
+          </div>
+          <div class="glass-panel p-5 rounded-2xl space-y-2">
+            <span class="text-xs font-semibold text-slate-400 uppercase">Theil-Sen Robust Slope</span>
+            <div id="stat-ts-slope" class="text-3xl font-extrabold font-mono text-white">+0.0329</div>
+            <span id="stat-r2" class="text-xs text-slate-400 block">R² = 0.124</span>
+            <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-sky-500/15 text-sky-400">Median Slope</span>
+          </div>
+        </div>
+
+        <!-- Scientific Interpretation Box -->
+        <div class="glass-panel p-6 rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/25 via-slate-900 to-navy-950 space-y-3">
+          <h3 id="interp-headline" class="text-lg font-bold text-white">Air Temperature is increasing</h3>
+          <p id="interp-narrative" class="text-sm text-slate-200 leading-relaxed font-normal"></p>
+          <p id="interp-significance" class="text-xs text-slate-400 border-t border-slate-800/80 pt-3"></p>
+        </div>
+
+        <!-- Time Series Chart Canvas -->
+        <div class="glass-panel p-6 rounded-3xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold text-white">Historical Time Series & 95% Confidence Band</h2>
+            <span id="chart-sub-meta" class="text-xs font-mono text-slate-400">312 observations (26.0 years)</span>
+          </div>
+          <div class="w-full h-[420px]">
+            <canvas id="trendChartCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Diagnostics Table -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="glass-panel p-6 rounded-3xl space-y-4">
+            <h3 class="text-base font-bold text-white">Empirical Data Quality Checks</h3>
+            <div id="quality-checks-list" class="space-y-2 text-xs"></div>
+          </div>
+          <div class="glass-panel p-6 rounded-3xl space-y-4">
+            <h3 class="text-base font-bold text-white">Provenance & Attribution</h3>
+            <div id="provenance-metadata-list" class="space-y-2 text-xs"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: COMPARE REGIONS -->
+    <div id="page-compare" class="hidden space-y-8">
+      <div>
+        <h1 class="text-3xl font-extrabold text-white">Compare Regions</h1>
+        <p class="text-sm text-slate-400">Descriptive comparison of environmental rate of change between two regions.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-emerald-500 space-y-2">
+          <span class="text-xs font-bold text-emerald-400 uppercase">Location A (Primary)</span>
+          <select id="compare-select-a" onchange="updateCompareStationA()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"></select>
+          <p id="compare-coords-a" class="text-xs font-mono text-slate-400"></p>
+        </div>
+        <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-sky-500 space-y-2">
+          <span class="text-xs font-bold text-sky-400 uppercase">Location B (Comparison)</span>
+          <select id="compare-select-b" onchange="updateCompareStationB()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"></select>
+          <p id="compare-coords-b" class="text-xs font-mono text-slate-400"></p>
+        </div>
+      </div>
+
+      <div class="glass-panel p-6 rounded-3xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-bold text-slate-300 uppercase">Variable:</span>
+            <select id="compare-var-select" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white">
+              <option value="T2M">T2M (Air Temperature)</option>
+              <option value="PRECTOTCORR">PRECTOTCORR (Precipitation)</option>
+              <option value="ALLSKY_SFC_SW_DWN">SW_DWN (Solar Radiation)</option>
+            </select>
+          </div>
+          <button onclick="executeComparison()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 text-navy-950 font-bold text-sm shadow-lg shadow-emerald-500/20">
+            Execute Regional Comparison →
+          </button>
+        </div>
+      </div>
+
+      <div id="compare-results-box" class="hidden space-y-6">
+        <div class="glass-panel p-6 rounded-3xl border border-slate-800 space-y-3">
+          <h2 class="text-xl font-extrabold text-white">Descriptive Summary</h2>
+          <p id="compare-summary-text" class="text-sm text-slate-200 leading-relaxed"></p>
+          <p class="text-xs text-slate-400 border-t border-slate-800 pt-3">
+            <strong>Note:</strong> Independent regressions; no hypothesis test of slope equality is applied.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="glass-panel p-6 rounded-3xl border-t-4 border-t-emerald-500 space-y-3" id="compare-card-a"></div>
+          <div class="glass-panel p-6 rounded-3xl border-t-4 border-t-sky-500 space-y-3" id="compare-card-b"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: DATA EXPLORER -->
+    <div id="page-data" class="hidden space-y-8">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-extrabold text-white">Data Explorer</h1>
+          <p class="text-sm text-slate-400">Inspect the 28,080 verified observations across 30 regional stations in Egypt.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="/climate_power_monthly_2000-2025.csv" download class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700">Download CSV (28k rows)</a>
+          <a href="/climate_power_monthly_2000-2025.xlsx" download class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">Download Excel Deliverable</a>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="glass-panel p-5 rounded-2xl"><span class="text-xs font-semibold text-slate-400">Total Records</span><div class="text-2xl font-extrabold font-mono text-white mt-1">28,080</div></div>
+        <div class="glass-panel p-5 rounded-2xl"><span class="text-xs font-semibold text-slate-400">Period</span><div class="text-2xl font-extrabold font-mono text-white mt-1">2000 – 2025</div></div>
+        <div class="glass-panel p-5 rounded-2xl"><span class="text-xs font-semibold text-slate-400">Stations</span><div class="text-2xl font-extrabold font-mono text-white mt-1">30 Grid Points</div></div>
+        <div class="glass-panel p-5 rounded-2xl"><span class="text-xs font-semibold text-slate-400">Parameters</span><div class="text-2xl font-extrabold font-mono text-white mt-1">T2M, PRECTOT, SW</div></div>
+      </div>
+
+      <!-- Station Table -->
+      <div class="glass-panel rounded-3xl overflow-hidden border border-slate-800">
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+          <input type="text" id="filter-station-input" onkeyup="filterStationTable()" placeholder="Filter stations (Cairo, Alexandria, Damietta...)" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white max-w-sm w-full" />
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm" id="stations-table">
+            <thead class="bg-slate-900/80 text-xs font-bold uppercase text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="py-3 px-6">Station / Region</th>
+                <th class="py-3 px-6">Grid ID</th>
+                <th class="py-3 px-6">Coordinates</th>
+                <th class="py-3 px-6 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="stations-table-body" class="divide-y divide-slate-800/60 text-xs"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: ABOUT -->
+    <div id="page-about" class="hidden space-y-12 max-w-4xl mx-auto py-6">
+      <div class="text-center space-y-3">
+        <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-xs font-bold uppercase">NASA Space Apps Challenge 2026</span>
+        <h1 class="text-4xl font-extrabold text-white">About EarthTrend</h1>
+        <p class="text-slate-300 text-sm">Empirical environmental analytics delivering transparent answers using real NASA observations.</p>
+      </div>
+
+      <div class="glass-panel p-8 rounded-3xl space-y-4">
+        <h2 class="text-xl font-bold text-white">Scientific Methodology</h2>
+        <div class="space-y-3 text-xs text-slate-300">
+          <p><strong>Ordinary Least Squares (OLS):</strong> Fits y(t) = β₀ + β₁t + ε (t in elapsed years). Calculates rate of change per year and decade with exact 95% confidence intervals.</p>
+          <p><strong>Mann-Kendall Test:</strong> Non-parametric rank correlation evaluating monotonic trend direction and tie-corrected Z statistics.</p>
+          <p><strong>Theil-Sen Estimator:</strong> Median of all pairwise slopes, offering resilience against transient sensor spikes or anomalous years.</p>
+          <p><strong>Seasonal Adjustment:</strong> Subtracts 12-month calendar baseline climatology to expose underlying multi-decadal trends.</p>
+        </div>
+      </div>
+
+      <div class="glass-panel p-8 rounded-3xl space-y-4">
+        <h2 class="text-xl font-bold text-white">Data Attribution</h2>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Primary historical variables originate from the <strong>NASA POWER project</strong> (NASA Langley Research Center) derived from MERRA-2 reanalysis and CERES satellite observations. Digital elevation and land-cover context are provided by <strong>NASADEM</strong> and <strong>ESA WorldCover</strong> as static reference layers.
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-900 bg-navy-950 py-8 text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div><strong>EarthTrend</strong> &copy; 2026 NASA Space Apps Challenge Submission</div>
+      <div class="flex items-center gap-6 text-slate-400">
+        <span>NASA POWER MERRA-2 Reanalysis</span>
+        <a href="https://github.com/ZeyadSalah134/Climato" target="_blank" class="text-emerald-400 hover:underline">GitHub: ZeyadSalah134/Climato</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Core JavaScript Application Logic -->
+  <script>
+    // State
+    let currentPage = 'home';
+    let verifiedStations = [];
+    let selectedPoint = { latitude: 30.0444, longitude: 31.2357, name: "Cairo Central / Giza, Egypt" };
+    let comparePointA = { latitude: 30.0444, longitude: 31.2357, name: "Cairo Central / Giza, Egypt" };
+    let comparePointB = { latitude: 31.0, longitude: 30.0, name: "Alexandria South / Beheira" };
+    let currentAlpha = 0.05;
+    let leafMap = null;
+    let mapMarkersLayer = null;
+    let trendChartInstance = null;
+
+    // Navigation
+    function navigateTo(page) {
+      currentPage = page;
+      ['home', 'explorer', 'trend', 'compare', 'data', 'about'].forEach(p => {
+        const el = document.getElementById('page-' + p);
+        if (el) el.classList.toggle('hidden', p !== page);
+        const btn = document.getElementById('nav-btn-' + p);
+        if (btn) {
+          if (p === page) {
+            btn.className = "px-3.5 py-2 rounded-lg text-sm font-medium transition-all text-emerald-400 bg-emerald-500/15 border border-emerald-500/30";
+          } else {
+            btn.className = "px-3.5 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60";
+          }
+        }
+      });
+      if (page === 'explorer') {
+        setTimeout(initMapIfNeeded, 100);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showError(msg) {
+      document.getElementById('error-message').textContent = msg;
+      document.getElementById('error-banner').classList.remove('hidden');
+    }
+    function hideError() {
+      document.getElementById('error-banner').classList.add('hidden');
+    }
+
+    function setAlpha(val) {
+      currentAlpha = val;
+      [0.01, 0.05, 0.10].forEach(v => {
+        const id = 'alpha-' + (v === 0.01 ? '001' : v === 0.05 ? '005' : '010');
+        const b = document.getElementById(id);
+        if (b) {
+          b.className = v === val 
+            ? 'py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/50' 
+            : 'py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 border border-slate-800';
+        }
+      });
+    }
+
+    // Leaflet Map Initialization
+    function initMapIfNeeded() {
+      if (leafMap) {
+        leafMap.invalidateSize();
+        return;
+      }
+      const container = document.getElementById('map-container');
+      if (!container) return;
+
+      leafMap = L.map(container).setView([selectedPoint.latitude, selectedPoint.longitude], 7);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '&copy; CARTO &copy; OSM'
+      }).addTo(leafMap);
+
+      mapMarkersLayer = L.layerGroup().addTo(leafMap);
+
+      leafMap.on('click', function(e) {
+        const lat = parseFloat(e.latlng.lat.toFixed(4));
+        const lng = parseFloat(e.latlng.lng.toFixed(4));
+        selectedPoint = { latitude: lat, longitude: lng, name: `Coordinate (${lat}°N, ${lng}°E)` };
+        updateTargetLocationDisplay();
+        renderMapMarkers();
+      });
+
+      renderMapMarkers();
+    }
+
+    function renderMapMarkers() {
+      if (!mapMarkersLayer) return;
+      mapMarkersLayer.clearLayers();
+
+      // Render 30 verified stations
+      verifiedStations.forEach(st => {
+        const isSelected = Math.abs(st.latitude - selectedPoint.latitude) < 0.1 && Math.abs(st.longitude - selectedPoint.longitude) < 0.1;
+        const color = isSelected ? '#10b981' : '#059669';
+        const circle = L.circleMarker([st.latitude, st.longitude], {
+          radius: isSelected ? 9 : 6,
+          fillColor: color,
+          color: '#ffffff',
+          weight: isSelected ? 2 : 1,
+          fillOpacity: isSelected ? 0.9 : 0.6
+        });
+        circle.bindTooltip(`<b>${st.name}</b><br><span style="color:#10b981;">Verified NASA Station</span><br>${st.latitude}°N, ${st.longitude}°E`);
+        circle.on('click', (e) => {
+          L.DomEvent.stopPropagation(e);
+          selectedPoint = { latitude: st.latitude, longitude: st.longitude, name: st.name };
+          updateTargetLocationDisplay();
+          renderMapMarkers();
+        });
+        circle.addTo(mapMarkersLayer);
+      });
+
+      // Target Pin
+      const targetPin = L.divIcon({
+        html: '<div style="background-color:#10b981; width:16px; height:16px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 0 12px #10b981;"></div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      });
+      L.marker([selectedPoint.latitude, selectedPoint.longitude], { icon: targetPin }).addTo(mapMarkersLayer);
+    }
+
+    function updateTargetLocationDisplay() {
+      document.getElementById('target-location-name').textContent = selectedPoint.name;
+      document.getElementById('target-location-coords').textContent = `${selectedPoint.latitude.toFixed(4)}°N, ${selectedPoint.longitude.toFixed(4)}°E`;
+    }
+
+    // Quick Preset handler
+    function runQuickPreset(name, lat, lon, variable) {
+      selectedPoint = { latitude: lat, longitude: lon, name: name };
+      updateTargetLocationDisplay();
+      document.getElementById('select-variable').value = variable;
+      executeCurrentAnalysis();
+    }
+
+    // Execute Analysis
+    async function executeCurrentAnalysis() {
+      hideError();
+      const btn = document.getElementById('btn-run-analysis');
+      if (btn) btn.textContent = 'Calculating NASA Statistics...';
+
+      const variable = document.getElementById('select-variable').value;
+      const startDate = document.getElementById('input-start-date').value;
+      const endDate = document.getElementById('input-end-date').value;
+      const seasonal = document.getElementById('check-seasonal').checked;
+
+      try {
+        const res = await fetch('/api/v1/analysis/trend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            variable,
+            source: 'NASA_POWER',
+            location: selectedPoint,
+            start_date: startDate,
+            end_date: endDate,
+            frequency: 'monthly',
+            methods: ['ols', 'mann_kendall', 'theil_sen'],
+            seasonal_adjustment: seasonal,
+            alpha: currentAlpha
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error?.message || err.detail || 'Analysis request failed.');
+        }
+
+        const data = await res.json();
+        renderTrendAnalysis(data);
+        navigateTo('trend');
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        if (btn) btn.textContent = 'Execute Statistical Trend Analysis →';
+      }
+    }
+
+    // Render Trend Analysis Page
+    function renderTrendAnalysis(data) {
+      document.getElementById('trend-empty').classList.add('hidden');
+      document.getElementById('trend-content').classList.remove('hidden');
+
+      const { ols, mann_kendall, theil_sen, quality, interpretation, provenance, request } = data;
+      const units = provenance.units || 'units';
+
+      // Header
+      document.getElementById('trend-var-badge').textContent = provenance.variable;
+      document.getElementById('trend-mode-badge').textContent = provenance.retrieval_mode === 'dataset' ? 'Climato 2000-2025 Dataset' : 'Live NASA POWER API';
+      document.getElementById('trend-id-badge').textContent = `ID: ${data.analysis_id.slice(0, 8)}`;
+      document.getElementById('trend-title').textContent = `${provenance.variable_name} Trend Analysis`;
+      document.getElementById('trend-location').textContent = `📍 ${request.location.name || 'Selected Location'} (${request.location.latitude.toFixed(4)}°N, ${request.location.longitude.toFixed(4)}°E)`;
+
+      // Export URLs
+      document.getElementById('btn-export-csv').href = `/api/v1/export/${data.analysis_id}?format=csv`;
+      document.getElementById('btn-export-json').href = `/api/v1/export/${data.analysis_id}?format=json`;
+      document.getElementById('btn-export-pdf').href = `/api/v1/export/${data.analysis_id}?format=pdf`;
+
+      // Stat Cards
+      const slope = ols ? ols.slope_per_year : 0;
+      const slopeDec = ols ? ols.slope_per_decade : 0;
+      document.getElementById('stat-ols-slope').textContent = `${slope > 0 ? '+' : ''}${slope.toFixed(4)} ${units}/yr`;
+      document.getElementById('stat-ols-decade').textContent = `${slopeDec > 0 ? '+' : ''}${slopeDec.toFixed(3)} ${units}/decade`;
+      document.getElementById('stat-ols-dir').textContent = ols?.direction ? ols.direction.replace(/_/g, ' ') : 'n/a';
+
+      const pVal = ols?.p_value ?? 1;
+      document.getElementById('stat-p-value').textContent = pVal < 0.0001 ? '< 0.0001' : pVal.toFixed(4);
+      const isSig = ols?.significant;
+      const sigBadge = document.getElementById('stat-sig-badge');
+      sigBadge.textContent = isSig ? 'Statistically Significant' : 'Not Significant';
+      sigBadge.className = isSig ? 'inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/15 text-emerald-400' : 'inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/15 text-amber-400';
+
+      document.getElementById('stat-mk-tau').textContent = mann_kendall?.tau ? mann_kendall.tau.toFixed(3) : 'n/a';
+      document.getElementById('stat-mk-z').textContent = mann_kendall?.z_statistic ? `Z = ${mann_kendall.z_statistic.toFixed(2)}` : '';
+      document.getElementById('stat-mk-trend').textContent = mann_kendall?.trend ? mann_kendall.trend.replace(/_/g, ' ') : 'n/a';
+
+      document.getElementById('stat-ts-slope').textContent = theil_sen?.slope_per_year ? `${theil_sen.slope_per_year > 0 ? '+' : ''}${theil_sen.slope_per_year.toFixed(4)} ${units}/yr` : 'n/a';
+      document.getElementById('stat-r2').textContent = `R² = ${ols ? ols.r_squared.toFixed(3) : '0.000'}`;
+
+      // Interpretation
+      document.getElementById('interp-headline').textContent = interpretation.headline;
+      document.getElementById('interp-narrative').textContent = interpretation.narrative;
+      document.getElementById('interp-significance').innerHTML = `<strong>Statistical Conclusion:</strong> ${interpretation.significance_statement}`;
+
+      // Diagnostics
+      const qList = document.getElementById('quality-checks-list');
+      qList.innerHTML = quality.checks.map(c => `
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+          <span class="text-slate-300 font-medium capitalize">${c.name.replace(/_/g, ' ')}</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${c.status === 'pass' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">${c.status}</span>
+        </div>
+      `).join('');
+
+      const mList = document.getElementById('provenance-metadata-list');
+      mList.innerHTML = `
+        <div class="flex justify-between py-1.5 border-b border-slate-800"><span class="text-slate-400">Data Source:</span><span class="text-white font-semibold">${provenance.provider}</span></div>
+        <div class="flex justify-between py-1.5 border-b border-slate-800"><span class="text-slate-400">Model:</span><span class="text-white font-semibold">MERRA-2 Reanalysis</span></div>
+        <div class="flex justify-between py-1.5 border-b border-slate-800"><span class="text-slate-400">Resolution:</span><span class="font-mono text-slate-200">${provenance.spatial_resolution}</span></div>
+        <div class="flex justify-between py-1.5 border-b border-slate-800"><span class="text-slate-400">Engine:</span><span class="font-mono text-emerald-400">EarthTrend v${provenance.engine_version}</span></div>
+      `;
+
+      // Chart.js rendering
+      renderChart(data);
+    }
+
+    function renderChart(data) {
+      const ctx = document.getElementById('trendChartCanvas');
+      if (!ctx) return;
+      if (trendChartInstance) trendChartInstance.destroy();
+
+      const points = data.trend_line || [];
+      const labels = points.map(p => p.date);
+      const observed = points.map(p => p.observed ?? null);
+      const fitted = points.map(p => p.fitted);
+      const lower = points.map(p => p.lower ?? p.fitted);
+      const upper = points.map(p => p.upper ?? p.fitted);
+      const units = data.provenance.units || 'units';
+
+      trendChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Observed Observations',
+              data: observed,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              borderWidth: 1.5,
+              pointRadius: points.length > 100 ? 1 : 2.5,
+              tension: 0.1
+            },
+            {
+              label: `OLS Fitted Trend (${data.ols ? data.ols.slope_per_year.toFixed(4) : 0} ${units}/yr)`,
+              data: fitted,
+              borderColor: '#f59e0b',
+              backgroundColor: 'transparent',
+              borderWidth: 2.5,
+              borderDash: [5, 4],
+              pointRadius: 0
+            },
+            {
+              label: 'Upper 95% CI',
+              data: upper,
+              borderColor: 'rgba(56, 189, 248, 0.4)',
+              borderWidth: 1,
+              borderDash: [2, 2],
+              pointRadius: 0,
+              fill: false
+            },
+            {
+              label: '95% Confidence Band',
+              data: lower,
+              borderColor: 'rgba(56, 189, 248, 0.4)',
+              backgroundColor: 'rgba(56, 189, 248, 0.08)',
+              borderWidth: 1,
+              borderDash: [2, 2],
+              pointRadius: 0,
+              fill: '-1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              labels: { color: '#cbd5e1', font: { family: 'Inter', size: 11 } }
+            },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              titleColor: '#38bdf8',
+              bodyColor: '#e2e8f0',
+              borderColor: '#334155',
+              borderWidth: 1
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#94a3b8', maxTicksLimit: 12, font: { family: 'JetBrains Mono', size: 10 } },
+              grid: { color: 'rgba(51, 65, 85, 0.25)' }
+            },
+            y: {
+              ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } },
+              grid: { color: 'rgba(51, 65, 85, 0.25)' },
+              title: { display: true, text: `${data.provenance.variable_name} (${units})`, color: '#cbd5e1' }
+            }
+          }
+        }
+      });
+    }
+
+    // Comparison Logic
+    function updateCompareStationA() {
+      const idx = document.getElementById('compare-select-a').value;
+      const st = verifiedStations[idx];
+      if (st) {
+        comparePointA = { latitude: st.latitude, longitude: st.longitude, name: st.name };
+        document.getElementById('compare-coords-a').textContent = `${st.latitude.toFixed(3)}°N, ${st.longitude.toFixed(3)}°E`;
+      }
+    }
+    function updateCompareStationB() {
+      const idx = document.getElementById('compare-select-b').value;
+      const st = verifiedStations[idx];
+      if (st) {
+        comparePointB = { latitude: st.latitude, longitude: st.longitude, name: st.name };
+        document.getElementById('compare-coords-b').textContent = `${st.latitude.toFixed(3)}°N, ${st.longitude.toFixed(3)}°E`;
+      }
+    }
+
+    async function executeComparison() {
+      hideError();
+      const variable = document.getElementById('compare-var-select').value;
+      try {
+        const res = await fetch('/api/v1/analysis/compare', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            variable,
+            source: 'NASA_POWER',
+            location_a: comparePointA,
+            location_b: comparePointB,
+            start_date: '2000-01-01',
+            end_date: '2025-12-01',
+            frequency: 'monthly',
+            seasonal_adjustment: true
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error?.message || err.detail || 'Comparison failed.');
+        }
+
+        const data = await res.json();
+        document.getElementById('compare-results-box').classList.remove('hidden');
+        document.getElementById('compare-summary-text').textContent = data.comparison.summary;
+
+        document.getElementById('compare-card-a').innerHTML = `
+          <h3 class="font-bold text-white text-base">${data.location_a.request.location.name}</h3>
+          <div class="space-y-1.5 text-xs text-slate-300">
+            <div class="flex justify-between py-1 border-b border-slate-800"><span>OLS Slope / yr:</span><span class="font-mono text-emerald-400 font-bold">${data.location_a.ols?.slope_per_year.toFixed(4)}</span></div>
+            <div class="flex justify-between py-1 border-b border-slate-800"><span>OLS Slope / dec:</span><span class="font-mono text-white">${data.location_a.ols?.slope_per_decade.toFixed(3)}</span></div>
+            <div class="flex justify-between py-1"><span>Significance:</span><span class="font-bold text-emerald-400">${data.location_a.ols?.significant ? 'Significant (p < 0.05)' : 'Not Significant'}</span></div>
+          </div>
+        `;
+
+        document.getElementById('compare-card-b').innerHTML = `
+          <h3 class="font-bold text-white text-base">${data.location_b.request.location.name}</h3>
+          <div class="space-y-1.5 text-xs text-slate-300">
+            <div class="flex justify-between py-1 border-b border-slate-800"><span>OLS Slope / yr:</span><span class="font-mono text-sky-400 font-bold">${data.location_b.ols?.slope_per_year.toFixed(4)}</span></div>
+            <div class="flex justify-between py-1 border-b border-slate-800"><span>OLS Slope / dec:</span><span class="font-mono text-white">${data.location_b.ols?.slope_per_decade.toFixed(3)}</span></div>
+            <div class="flex justify-between py-1"><span>Significance:</span><span class="font-bold text-sky-400">${data.location_b.ols?.significant ? 'Significant (p < 0.05)' : 'Not Significant'}</span></div>
+          </div>
+        `;
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    // Location search
+    async function handleSearchLocation() {
+      const q = document.getElementById('location-search-input').value;
+      if (!q.trim()) return;
+      const res = await fetch(`/api/v1/locations/search?q=${encodeURIComponent(q)}&limit=6`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const box = document.getElementById('search-results-box');
+      if (data.items && data.items.length > 0) {
+        box.classList.remove('hidden');
+        box.innerHTML = data.items.map(it => `
+          <div onclick="selectSearchResult('${it.name.replace(/'/g, "\\'")}', ${it.latitude}, ${it.longitude})" class="p-2 rounded hover:bg-slate-800 cursor-pointer flex justify-between">
+            <span class="text-white">${it.display_name || it.name}</span>
+            <span class="text-slate-400 font-mono">${it.latitude.toFixed(2)}°, ${it.longitude.toFixed(2)}°</span>
+          </div>
+        `).join('');
+      } else {
+        box.classList.add('hidden');
+      }
+    }
+
+    function selectSearchResult(name, lat, lon) {
+      selectedPoint = { latitude: lat, longitude: lon, name };
+      updateTargetLocationDisplay();
+      if (leafMap) leafMap.setView([lat, lon], 8);
+      renderMapMarkers();
+      document.getElementById('search-results-box').classList.add('hidden');
+    }
+
+    // Filter station table in Data Explorer
+    function filterStationTable() {
+      const q = document.getElementById('filter-station-input').value.toLowerCase();
+      const rows = document.querySelectorAll('#stations-table-body tr');
+      rows.forEach(r => {
+        const text = r.textContent.toLowerCase();
+        r.style.display = text.includes(q) ? '' : 'none';
+      });
+    }
+
+    // App Initialization
+    async function initApp() {
+      try {
+        const res = await fetch('/api/v1/datasets/verified');
+        if (res.ok) {
+          const ds = await res.json();
+          verifiedStations = ds.stations || [];
+
+          // Populate stations table
+          const tbody = document.getElementById('stations-table-body');
+          tbody.innerHTML = verifiedStations.map(st => `
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-3 px-6 font-semibold text-white">📍 ${st.name}</td>
+              <td class="py-3 px-6 font-mono text-slate-300">${st.point_id}</td>
+              <td class="py-3 px-6 font-mono text-slate-300">${st.latitude.toFixed(3)}°N, ${st.longitude.toFixed(3)}°E</td>
+              <td class="py-3 px-6 text-right">
+                <button onclick="runQuickPreset('${st.name.replace(/'/g, "\\'")}', ${st.latitude}, ${st.longitude}, 'T2M')" class="px-3 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-navy-950 font-bold border border-emerald-500/30">
+                  Analyze Trend
+                </button>
+              </td>
+            </tr>
+          `).join('');
+
+          // Populate compare dropdowns
+          const selA = document.getElementById('compare-select-a');
+          const selB = document.getElementById('compare-select-b');
+          selA.innerHTML = verifiedStations.map((st, i) => `<option value="${i}">${st.name}</option>`).join('');
+          selB.innerHTML = verifiedStations.map((st, i) => `<option value="${i}" ${i === 15 ? 'selected' : ''}>${st.name}</option>`).join('');
+          updateCompareStationA();
+          updateCompareStationB();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>

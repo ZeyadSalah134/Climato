@@ -1,0 +1,9 @@
+# Optional geospatial dependencies.
+#
+# These enable the optional geographic-context module (NASADEM elevation and
+# ESA WorldCover land cover). They are large binary packages and are therefore
+# kept separate from the core requirements so the main application installs
+# quickly and runs without them.
+xarray>=2024.1
+rasterio>=1.3
+pyproj>=3.6
